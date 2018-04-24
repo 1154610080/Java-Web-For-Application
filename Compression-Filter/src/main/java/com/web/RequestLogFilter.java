@@ -8,12 +8,23 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 
-//日志过滤器
-//扩展：使该过滤器能正确处理异步请求
-public class RequestLogFilter implements Filter {
+/*
+ * 日志过滤器
+ * 注意：该过滤器不能正确地处理异步请求
+ *
+ * @Author Egan
+ * @Date 2018/4/24
+ **/
+class RequestLogFilter implements Filter {
 
-//    记录所有访问应用程序的信息，包括IP地址、时间戳、请求方式、协议、响应状态、长度和请求处理的时间
-//    格式：IP地址[时间戳] "方法 URI 协议" 状态 长度 请求处理的时间
+    /*
+     * 记录所有访问应用程序的信息
+     * 记录格式：IP地址[时间戳] "请求方式 URI 协议" 状态 长度 请求处理的时间
+     *
+     * @date 2018/4/24 20:39
+     * @param [request, response, chain]
+     * @return void
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
                          FilterChain chain) throws IOException, ServletException {

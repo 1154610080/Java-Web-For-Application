@@ -1,12 +1,20 @@
 package com.web;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.rmi.server.ServerCloneException;
+import java.util.zip.GZIPOutputStream;
 
 /*
  * 响应压缩过滤器
@@ -40,9 +48,8 @@ public class CompressionFilter implements Filter {
             ResponseWrapper wrapper = new ResponseWrapper((HttpServletResponse) response);
 
             try {
-
+                chain.doFilter(request, wrapper);
             }finally {
-
                 try {
                  wrapper.finish();
                 }catch (IOException e){
@@ -91,8 +98,9 @@ public class CompressionFilter implements Filter {
             if(writer == null && outputStream != null)
                 throw  new IllegalStateException("getOutputStream() already called");
             if(writer == null){
-                writer = new PrintWriter(super.getWriter());
                 outputStream = new GZIPServletOutputStream(super.getOutputStream());
+                writer = new PrintWriter(new OutputStreamWriter(
+                        this.outputStream, this.getCharacterEncoding()));
             }
             return writer;
         }
@@ -146,7 +154,7 @@ public class CompressionFilter implements Filter {
         public void finish() throws IOException {
             if(writer != null){
                 writer.close();
-            }if(outputStream != null){
+            }else if(outputStream != null){
                 outputStream.finish();
             }
         }
@@ -158,12 +166,12 @@ public class CompressionFilter implements Filter {
     {
 
         private final ServletOutputStream servletOutputStream;
-        private final GZIPServletOutputStream gzipStream;
+        private final GZIPOutputStream gzipStream;
 
-        GZIPServletOutputStream(ServletOutputStream outputStream)
+        public GZIPServletOutputStream(ServletOutputStream outputStream) throws IOException
         {
             servletOutputStream = outputStream;
-            gzipStream = new GZIPServletOutputStream(servletOutputStream);
+            gzipStream = new GZIPOutputStream(outputStream);
         }
 
         @Override
@@ -175,13 +183,23 @@ public class CompressionFilter implements Filter {
         @Override
         public void setWriteListener(WriteListener writeListener)
         {
-            gzipStream.setWriteListener(writeListener);
+            servletOutputStream.setWriteListener(writeListener);
         }
 
         @Override
         public void write(int b) throws IOException
         {
             gzipStream.write(b);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            gzipStream.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            gzipStream.close();
         }
 
         public void finish() throws IOException{

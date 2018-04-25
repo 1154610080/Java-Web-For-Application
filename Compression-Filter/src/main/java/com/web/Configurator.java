@@ -17,16 +17,14 @@ public class Configurator implements ServletContextListener{
 
         FilterRegistration.Dynamic registration = context.addFilter
                 ("requestLogFilter", new RequestLogFilter());
-
         registration.addMappingForUrlPatterns
                 (null, false, "/*");
 
         registration = context.addFilter
                 ("compressionFilter", new CompressionFilter());
-
         registration.setAsyncSupported(true);
-
-        registration.addMappingForUrlPatterns(null, false, "/*");
+        registration.addMappingForUrlPatterns
+                (null, false, "/*");
     }
 
     @Override

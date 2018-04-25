@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
  * 如果有，Content-Encoding设为GZIP，否则提示错误信息
  * 然后使用私有内部类ResponseWrapper封装PrintWriter或ServletOutputStream，将数据发送到客户端。
  * 该封装对象含有一个GZIPOutputStream的内部实例，响应数据首先被写入GZIPOutputStream，
- * 当请求完成时，它将完成压缩并将响应数据封装到ServletOutputSteam中。
+ * 当请求完成时，它将完成压缩并将响应数据封装到ServletOutputStream中。
  * ResponseWrapper还将阻止Servlet设置响应的内容长度头，因为直到压缩完成它才能获得内容长度
  *
  * @Author Egan

@@ -1,4 +1,4 @@
-package com.web;
+package com.web.site;
 
 public interface GreetingService {
     String getGreeting(String name);

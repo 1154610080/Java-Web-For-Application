@@ -5,7 +5,7 @@
 
     <mvc:annotation-driven/>
 
-    <bean name="greetingController" class="com.web.GreetingController">
+    <bean name="greetingController" class="com.web.site.GreetingController">
         <property name="greetingService" ref="greetingServiceImpl"/>
     </bean>
 </beans>

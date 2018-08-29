@@ -1,4 +1,4 @@
-package com.web;
+package com.web.site;
 
 public class GreetingServiceImpl implements GreetingService {
 

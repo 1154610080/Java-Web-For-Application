@@ -1,5 +1,6 @@
 package com.web.config;
 
+import com.web.site.LoggingFilter;
 import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -28,6 +29,8 @@ public class Bootstrap implements WebApplicationInitializer{
         ));
         dispatcher.addMapping("/");
 
-
+        //注册日志过滤器
+        FilterRegistration registration = container.addFilter("loggingFilter", new LoggingFilter());
+        registration.addMappingForUrlPatterns(null, false, "/*");
     }
 }

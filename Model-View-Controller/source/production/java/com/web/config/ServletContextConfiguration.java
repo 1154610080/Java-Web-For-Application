@@ -12,9 +12,12 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
+import org.springframework.oxm.Marshaller;
+import org.springframework.oxm.Unmarshaller;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.RequestToViewNameTranslator;
 import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator;
@@ -22,8 +25,6 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
 import javax.inject.Inject;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import java.util.Arrays;
 import java.util.List;
 
@@ -72,6 +73,21 @@ public class ServletContextConfiguration extends WebMvcConfigurerAdapter{
         ));
         jsonConverter.setObjectMapper(this.objectMapper);
         converters.add(jsonConverter);
+    }
+
+    /**
+     * 配置内容协商
+     * 该配置将启用文件扩展名检查，禁用请求参数检查(format)，将请求参数名称设置为mediaType（注意，由于请求参数检查被禁止，所以这一步仅为演示），
+     * 并确保Accept头不被忽略。它还将禁用JAF(Java Activation Framework)——一个可将文件扩展名映射到媒体类型的工具——支持手动指定可用的媒体类型。
+     * 最后，它将默认的内容类型设为 application/xml，还添加了对 application/xml 和 application/json 的支持
+     **/
+    @Override
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+        configurer.favorPathExtension(true).favorParameter(false)
+                .parameterName("mediaType").ignoreAcceptHeader(false)
+                .useJaf(false).defaultContentType(MediaType.APPLICATION_XML)
+                .mediaType("xml", MediaType.APPLICATION_XML)
+                .mediaType("json", MediaType.APPLICATION_JSON);
     }
 
     /**

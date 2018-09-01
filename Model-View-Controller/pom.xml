@@ -198,6 +198,7 @@
         <version>2.3</version>
         <configuration>
           <warSourceDirectory>web</warSourceDirectory>
+            <webappDirectory>web</webappDirectory>
         </configuration>
       </plugin>
       <plugin>

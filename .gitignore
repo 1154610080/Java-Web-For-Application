@@ -27,5 +27,6 @@ hs_err_pid*
 *.gitignore
 .idea/
 out/
+*/target/
 *.iml
 

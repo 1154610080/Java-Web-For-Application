@@ -1,5 +1,6 @@
 package com.web.config;
 
+import com.web.site.AuthenticationFilter;
 import com.web.site.LoggingFilter;
 import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
@@ -32,5 +33,14 @@ public class Bootstrap implements WebApplicationInitializer{
         //注册日志过滤器
         FilterRegistration registration = container.addFilter("loggingFilter", new LoggingFilter());
         registration.addMappingForUrlPatterns(null, false, "/*");
+
+        //注册验证过滤器
+        registration = container.addFilter(
+                "authenticationFilter", new AuthenticationFilter()
+        );
+        registration.addMappingForUrlPatterns(
+                null, false, "/ticket","/ticket/*", "/chat", "/chat/*",
+                "/session", "/session/*"
+        );
     }
 }

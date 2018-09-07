@@ -3,6 +3,7 @@ package com.web.site;
 import com.web.site.entity.Discussion;
 import org.springframework.stereotype.Repository;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -23,6 +24,8 @@ public class InMemoryDiscussionRepository implements DiscussionRepository{
     private final Map<Long, Discussion> database = new Hashtable<>();
     private volatile long discussionIdSequence = 1L;
 
+    @Inject private ReplyRepository replyRepository;
+
     @Override
     public List<Discussion> getAll() {
         return new ArrayList<>(this.database.values());
@@ -42,6 +45,12 @@ public class InMemoryDiscussionRepository implements DiscussionRepository{
     @Override
     public void update(Discussion discussion) {
         this.database.put(discussion.getId(), discussion);
+    }
+
+    @Override
+    public void delete(long id) {
+        this.database.remove(id);
+        this.replyRepository.deleteForDiscussion(id);
     }
 
     private synchronized long getNextDiscussionId(){

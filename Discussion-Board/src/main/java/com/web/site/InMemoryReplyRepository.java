@@ -43,6 +43,12 @@ public class InMemoryReplyRepository implements ReplyRepository{
         this.database.put(reply.getId(), reply);
     }
 
+    @Override
+    public void deleteForDiscussion(long id) {
+        this.database.entrySet()
+                .removeIf(e -> e.getValue().getId() == id);
+    }
+
     private synchronized long getNextReplyId(){
         return this.replyIdSequence++;
     }

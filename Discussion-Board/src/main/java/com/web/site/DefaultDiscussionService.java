@@ -1,11 +1,16 @@
 package com.web.site;
 
 import com.web.site.entity.Discussion;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.text.Normalizer;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -18,6 +23,8 @@ import java.util.List;
  **/
 @Service
 public class DefaultDiscussionService implements DiscussionService{
+
+    private static Logger log = LogManager.getLogger();
 
     @Inject
     DiscussionRepository discussionRepository;
@@ -58,5 +65,17 @@ public class DefaultDiscussionService implements DiscussionService{
         }else   //否则更新
             this.discussionRepository.update(discussion);
 
+    }
+
+    @Scheduled(fixedDelay = 15_000L, initialDelay = 15_000L)
+    public void deleteStaleDiscussions(){
+        Instant oneYearAgo = Instant.now().minus(365L, ChronoUnit.DAYS);
+        log.info("Deleting discussion stale since {}.", oneYearAgo);
+
+        List<Discussion> list = this.discussionRepository.getAll();
+        list.removeIf(d -> d.getLastUpdated().isAfter(oneYearAgo));
+
+        for (Discussion old : list)
+            this.discussionRepository.delete(old.getId());
     }
 }

@@ -10,4 +10,5 @@ public interface DiscussionRepository {
     Discussion get(long id);
     void add(Discussion discussion);
     void update(Discussion discussion);
+    void delete(long id);
 }

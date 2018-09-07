@@ -5,7 +5,9 @@ import com.web.site.entity.Reply;
 
 import javax.inject.Inject;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 默认回复服务类
@@ -19,6 +21,7 @@ public class DefaultReplyService implements ReplyService {
 
     @Inject ReplyRepository replyRepository;
     @Inject DiscussionService discussionService;
+    @Inject NotificationService notificationService;
 
     @Override
     public List<Reply> getRepliesForDiscussion(long discussionId) {
@@ -40,5 +43,10 @@ public class DefaultReplyService implements ReplyService {
         }else
             this.replyRepository.update(reply);
         this.discussionService.saveDiscussion(discussion);
+
+        //当回复是新回复，调用异步方法
+        Set<String> recipients = new HashSet<>(discussion.getSubScribedUsers());
+        recipients.remove(reply.getUser());
+        this.notificationService.sendNotification("Reply posted", "Someone replied to \"" + discussion.getSubject() +"\".", recipients);
     }
 }

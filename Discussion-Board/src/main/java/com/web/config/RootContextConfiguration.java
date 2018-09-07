@@ -3,14 +3,31 @@ package com.web.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+
+import java.util.concurrent.Executor;
 
 @Configuration
+//使用CGLIB库创建含有异步或计划方法的代理类
+@EnableAsync(proxyTargetClass = true)
+@EnableScheduling
 @ComponentScan(basePackages = "com.web.site")
-public class RootContextConfiguration {
+public class RootContextConfiguration implements AsyncConfigurer, SchedulingConfigurer{
+
+    private static final Logger log = LogManager.getLogger();
+    private static final Logger schedulingLogger = LogManager.getLogger(log.getName() + ".[scheduling]");
 
     @Bean
     public ObjectMapper objectMapper(){
@@ -26,5 +43,40 @@ public class RootContextConfiguration {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
         marshaller.setPackagesToScan(new String[]{"com.web.site"});
         return marshaller;
+    }
+
+    //配置调度器
+    @Bean
+    public ThreadPoolTaskScheduler taskScheduler(){
+        log.info("Setting up thread pool task scheduler with 20 threads.");
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(20);
+        scheduler.setThreadNamePrefix("task-");
+        scheduler.setAwaitTerminationSeconds(60);
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setErrorHandler(t -> schedulingLogger.error(
+                "Unknown error occurred while executing task.", t
+        ));
+        scheduler.setRejectedExecutionHandler(
+                (r, e) -> schedulingLogger.error(
+                        "Execution of task {} was rejected for unknown reasons.", r
+                )
+        );
+
+        return scheduler;
+    }
+
+    @Override
+    public Executor getAsyncExecutor() {
+        Executor executor = this.taskScheduler();
+        log.info("Configuring asynchronous method executor {}.", executor);
+        return executor;
+    }
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
+        TaskScheduler scheduler = this.taskScheduler();
+        log.info("Configuring scheduled method executor {}.", scheduler);
+        scheduledTaskRegistrar.setTaskScheduler(scheduler);
     }
 }

@@ -9,8 +9,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,13 +93,58 @@ public class TicketController {
         return new DownloadView(attachment.getName(), attachment.getMimeContentType(), attachment.getContent());
     }
 
-    public String create(Map<String, Object> model){}
+    /**
+     * 创建票据视图
+     *
+     * @date 2018/9/8 19:58
+     * @param model   通用模型
+     * @return java.lang.String
+     **/
+    @RequestMapping(value = "create", method = RequestMethod.GET)
+    public String create(Map<String, Object> model){
+        model.put("ticketForm", new Form());
+        return "ticket/add";
+    }
 
-    public View create(HttpSession session, Form form){}
+    /**
+     * 创建票据
+     *
+     * @date 2018/9/8 19:58
+     * @param session 会话
+	 * @param form   提交表单
+     * @return org.springframework.web.servlet.View
+     **/
+    @RequestMapping(value = "create", method = RequestMethod.GET)
+    public View create(HttpSession session, Form form) throws IOException {
 
-    private ModelAndView getListRedirectModelAndView(){}
+        Ticket ticket = new Ticket();
+        ticket.setId(this.getNextTicketId());
+        ticket.setCustomerName((String) session.getAttribute("username"));
+        ticket.setBody(form.getBody());
+        ticket.setSubject(form.getSubject());
+        ticket.setDataCreated(Instant.now());
 
-    private View getListRedirectView(){}
+        for(MultipartFile filePart : form.getAttachments()){
+            log.info("Processing attachments for new ticket");
+            Attachment attachment = new Attachment();
+            attachment.setName(filePart.getOriginalFilename());
+            attachment.setMimeContentType(filePart.getContentType());
+            attachment.setContent(filePart.getBytes());
+
+            if((attachment.getName() != null && attachment.getName().length() > 0) ||
+                    (attachment.getContent() != null && attachment.getContent().length > 0))
+                ticket.addAttachment(attachment);
+        }
+
+        ticketDatabase.put(ticket.getId(), ticket);
+
+        return new RedirectView("ticket/view/" + ticket.getId(), true, false);
+
+    }
+
+    private ModelAndView getListRedirectModelAndView(){return new ModelAndView(this.getListRedirectView());}
+
+    private View getListRedirectView(){return new RedirectView("/ticket/list", true, false);}
 
     private synchronized long getNextTicketId(){return this.TICKET_ID_SEQUENCE++; }
 

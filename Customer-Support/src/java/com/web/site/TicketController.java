@@ -64,7 +64,31 @@ public class TicketController {
         return new ModelAndView("ticket/view");
     }
 
-    public View download(long ticketId, String name){}
+    /**
+     * 下载特定票据的附件
+     *
+     * @date 2018/9/8 19:50
+     * @param ticketId 目标票据id
+	 * @param name 附件名称
+     * @return org.springframework.web.servlet.View
+     **/
+    @RequestMapping(value = "{ticketId}/{attachment:.+}", method = RequestMethod.GET)
+    public View download(@PathVariable("ticketId") long ticketId,
+                         @PathVariable("attachment") String name){
+
+        Ticket ticket = ticketDatabase.get(ticketId);
+        if(ticket == null){
+            return this.getListRedirectView();
+        }
+
+        Attachment attachment = ticket.getAttachment(name);
+        if(attachment == null){
+            log.info("Couldn't found request attachment {} on ticket {}", name, ticket);
+            return this.getListRedirectView();
+        }
+
+        return new DownloadView(attachment.getName(), attachment.getMimeContentType(), attachment.getContent());
+    }
 
     public String create(Map<String, Object> model){}
 

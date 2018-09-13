@@ -32,7 +32,7 @@
             to the JSTL specification.
         ]]></description>
         <name>formatDate</name>
-        <tag-class>com.wrox.site.tag.FormatDateTag</tag-class>
+        <tag-class>com.web.site.tag.FormatDateTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
             <description>
@@ -154,7 +154,7 @@
             second" or "ten seconds" or "about 12 minutes".
         </description>
         <name>timeIntervalToString</name>
-        <function-class>com.wrox.site.TimeUtils</function-class>
+        <function-class>com.web.site.TimeUtils</function-class>
         <function-signature>
             java.lang.String intervalToString(long)
         </function-signature>

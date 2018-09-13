@@ -26,7 +26,7 @@ public class AuthenticationFilter implements Filter{
             throws IOException, ServletException {
         HttpSession session = ((HttpServletRequest)request).getSession(false);
 
-        if(session != null && session.getAttribute("username") == null)
+        if(session == null || session.getAttribute("username") == null)
             ((HttpServletResponse)response).sendRedirect(
                     ((HttpServletRequest)request).getContextPath() + "/login");
         else

@@ -114,7 +114,7 @@ public class TicketController {
 	 * @param form   提交表单
      * @return org.springframework.web.servlet.View
      **/
-    @RequestMapping(value = "create", method = RequestMethod.GET)
+    @RequestMapping(value = "create", method = RequestMethod.POST)
     public View create(HttpSession session, Form form) throws IOException {
 
         Ticket ticket = new Ticket();
@@ -125,7 +125,7 @@ public class TicketController {
         ticket.setDataCreated(Instant.now());
 
         for(MultipartFile filePart : form.getAttachments()){
-            log.info("Processing attachments for new ticket");
+            log.debug("Processing attachments for new ticket");
             Attachment attachment = new Attachment();
             attachment.setName(filePart.getOriginalFilename());
             attachment.setMimeContentType(filePart.getContentType());

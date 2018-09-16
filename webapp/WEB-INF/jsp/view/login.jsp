@@ -3,7 +3,7 @@
 <%--@elvariable id="loginFailed" type="java.lang.Boolean"--%>
 <%--@elvariable id="loginForm" type="com.web.site.AuthenticationFiler.Form"--%>
 <template:loggedOut htmlTitle="Log In" bodyTitle="Log In">
-    You must log in to access customer site.<br/><br/>
+    You must log in to access the customer site.<br/><br/>
     <c:if test="${loginFailed}">
         <b>The username and password you entered are not correct. Please try
             again.</b><br/><br/>
@@ -12,7 +12,7 @@
         <form:label path="username">Username</form:label><br/>
         <form:input path="username"/><br/><br/>
         <form:label path="password">Password</form:label><br/>
-        <form:input path="password"/><br/><br/>
+        <form:password path="password"/><br/><br/>
         <input type="submit" value="Log In">
     </form:form>
 </template:loggedOut>

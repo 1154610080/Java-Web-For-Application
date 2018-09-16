@@ -2,7 +2,7 @@
 <template:basic htmlTitle="Tickets" bodyTitle="Tickets">
     <c:choose>
         <c:when test="${fn:length(ticketDatabase) == 0}">
-            <i>There are no tickets in the system.</i>
+            <i>There are no ticket in the system.</i>
         </c:when>
         <c:otherwise>
             <c:forEach items="${ticketDatabase}" var="entry">

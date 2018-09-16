@@ -2,7 +2,7 @@
 <%--@elvariable id="ticket" type="com.wrox.site.Ticket"--%>
 <template:basic htmlTitle="${ticket.subject}"
                 bodyTitle="Ticket #${ticketId}: ${ticket.subject}">
-    <i>Customer Name - <c:out value="${ticket.customerName}" /><br />
+    <i>Customer Support - <c:out value="${ticket.customerName}" /><br />
         Created <wrox:formatDate value="${ticket.dateCreated}" type="both"
                                  timeStyle="long" dateStyle="full" /></i><br /><br />
     <c:out value="${ticket.body}" /><br /><br />

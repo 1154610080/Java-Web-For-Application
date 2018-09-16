@@ -2,6 +2,7 @@ package com.web.config;
 
 import com.web.site.AuthenticationFilter;
 import com.web.site.LoggingFilter;
+import com.web.site.SessionListener;
 import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -19,6 +20,7 @@ public class Bootstrap implements WebApplicationInitializer{
                 new AnnotationConfigWebApplicationContext();
         rootContext.register(RootContextConfiguration.class);
         container.addListener(new ContextLoaderListener(rootContext));
+        container.addListener(SessionListener.class);
 
         AnnotationConfigWebApplicationContext servletContext =
                 new AnnotationConfigWebApplicationContext();

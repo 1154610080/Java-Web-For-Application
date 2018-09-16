@@ -1,5 +1,7 @@
 package com.web.site;
 
+import org.springframework.stereotype.Service;
+
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -12,6 +14,7 @@ import java.util.Map;
  * @author Egan
  * @date 2018/9/16 21:30
  **/
+@Service
 public class DefaultSessionRegistry implements SessionRegistry{
 
     private final Map<String, HttpSession> sessions = new Hashtable<>();

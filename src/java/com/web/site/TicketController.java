@@ -122,7 +122,7 @@ public class TicketController {
         ticket.setCustomerName((String) session.getAttribute("username"));
         ticket.setBody(form.getBody());
         ticket.setSubject(form.getSubject());
-        ticket.setDataCreated(Instant.now());
+        ticket.setDateCreated(Instant.now());
 
         for(MultipartFile filePart : form.getAttachments()){
             log.debug("Processing attachments for new ticket");
@@ -138,7 +138,7 @@ public class TicketController {
 
         ticketDatabase.put(ticket.getId(), ticket);
 
-        return new RedirectView("ticket/view/" + ticket.getId(), true, false);
+        return new RedirectView("/ticket/view/" + ticket.getId(), true, false);
 
     }
 

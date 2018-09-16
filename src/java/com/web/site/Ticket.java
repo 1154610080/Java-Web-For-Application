@@ -2,6 +2,7 @@ package com.web.site;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -20,9 +21,9 @@ public class Ticket {
 
     private String body;
 
-    Instant dataCreated;
+    Instant dateCreated;
 
-    Map<String, Attachment> attachments;
+    Map<String, Attachment> attachments = new LinkedHashMap<>();
 
     public long getId() {
         return id;
@@ -56,12 +57,12 @@ public class Ticket {
         this.body = body;
     }
 
-    public Instant getDataCreated() {
-        return dataCreated;
+    public Instant getDateCreated() {
+        return dateCreated;
     }
 
-    public void setDataCreated(Instant dataCreated) {
-        this.dataCreated = dataCreated;
+    public void setDateCreated(Instant dateCreated) {
+        this.dateCreated = dateCreated;
     }
 
     public Attachment getAttachment(String name){
@@ -74,5 +75,10 @@ public class Ticket {
 
     public void addAttachment(Attachment attachment){
         attachments.put(attachment.getName(), attachment);
+    }
+
+    public int getNumberOfAttachments()
+    {
+        return this.attachments.size();
     }
 }

@@ -9,8 +9,10 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.view.RedirectView;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,25 +27,22 @@ public class AuthenticationController {
     private static final Logger log = LogManager.getLogger();
     private static final Map<String, String> userdatabase = new HashMap<>();
 
-    static {
-        userdatabase.put("Nicholas", "password");
-        userdatabase.put("Sarah", "drowssap");
-        userdatabase.put("Mike", "wordpass");
-        userdatabase.put("John", "green");
-    }
+    @Inject AuthenticationService authenticationService;
 
     /**
      * 注销方法
      *
      * @date 2018/9/2 12:31
+     * @param  request 用户请求
      * @param session   当前的session
      * @return org.springframework.web.servlet.View 重定向至登录视图
      **/
     @RequestMapping("logout")
-    public View logout(HttpSession session){
-        if(log.isDebugEnabled())
+    public View logout(HttpServletRequest request, HttpSession session){
+        if(log.isDebugEnabled() &&
+                request.getUserPrincipal() != null)
             log.debug("User {} logged out.",
-                    session.getAttribute("username"));
+                    request.getUserPrincipal().getName());
         session.invalidate();
 
         return new RedirectView("/login", true, false);
@@ -59,7 +58,8 @@ public class AuthenticationController {
      **/
     @RequestMapping(value = "login", method = RequestMethod.GET)
     public ModelAndView login(Map<String, Object>model, HttpSession session){
-        if(session.getAttribute("username") != null)
+
+        if(UserPrincipal.getPrincipal(session) != null)
             return this.getTicketRedirect();
 
         model.put("loginFailed", false);
@@ -81,21 +81,21 @@ public class AuthenticationController {
     @RequestMapping(value = "login", method = RequestMethod.POST)
     public ModelAndView login(Map<String, Object>model, HttpSession session,
                               HttpServletRequest request, Form form){
-        if(session.getAttribute("username") != null)
+
+        if(UserPrincipal.getPrincipal(session) != null)
             return this.getTicketRedirect();
 
-        if(form.getUsername() == null || form.getPassword() == null ||
-                !userdatabase.containsKey(form.getUsername()) ||
-                !form.getPassword().equals(userdatabase.get(form.getUsername()))){
-            log.warn("Login failed for user {}.", form.getUsername());
+        Principal principal = this.authenticationService.authenticate(
+                form.getUsername(), form.getPassword()
+        );
+
+        if(principal == null){
             form.setPassword(null);
-            model.put("loginFailed", true);
+            model.put("loginFiled", true);
             model.put("loginForm", form);
             return new ModelAndView("login");
         }
-
-        log.debug("User {} successfully logged in.", form.getUsername());
-        session.setAttribute("username", form.getUsername());
+        UserPrincipal.setPrincipal(session, principal);
         request.changeSessionId();
         return this.getTicketRedirect();
 

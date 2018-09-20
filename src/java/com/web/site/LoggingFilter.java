@@ -21,10 +21,6 @@ import java.util.UUID;
  * @date 2018/9/1 19:34
  **/
 
-@WebFilter(urlPatterns = "/*", dispatcherTypes = {
-        DispatcherType.REQUEST, DispatcherType.ERROR, DispatcherType.FORWARD,
-        DispatcherType.INCLUDE, DispatcherType.ASYNC
-})
 public class LoggingFilter implements Filter
 {
     @Override

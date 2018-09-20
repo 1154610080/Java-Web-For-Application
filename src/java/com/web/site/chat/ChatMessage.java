@@ -1,6 +1,6 @@
 package com.web.site.chat;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 /**
  * 聊天消息POJO
@@ -9,16 +9,16 @@ import java.time.OffsetDateTime;
  * @date 2018/9/2 15:45
  **/
 public class ChatMessage {
-    private OffsetDateTime timeStamp;
+    private Instant timeStamp;
     private Type type;
     private String user;
     private String content;
 
-    public OffsetDateTime getTimeStamp() {
+    public Instant getTimeStamp() {
         return timeStamp;
     }
 
-    public void setTimeStamp(OffsetDateTime timeStamp) {
+    public void setTimeStamp(Instant timeStamp) {
         this.timeStamp = timeStamp;
     }
 

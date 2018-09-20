@@ -1,8 +1,13 @@
 package com.web.site.chat;
 
+import com.web.site.SessionRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.web.socket.server.standard.SpringConfigurator;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
@@ -14,11 +19,14 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.UserPrincipal;
+import java.security.Principal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.function.Consumer;
 
 /**
  * 聊天终端类
@@ -35,21 +43,33 @@ import java.util.Map;
 @WebListener
 public class ChatEndpoint implements HttpSessionListener {
 
-    /**
-     * 由于该类的每一个实例都将在启动时作为WEB监听器创建，
-     * 每次客户端连接到服务器也会创建新的实例，所有所有字段都要使用静态字段
-     **/
     private static final Logger log = LogManager.getLogger();
 
-    private static final String HTTP_SESSION_PROPERTY = "com.web.ws.HTTP_SESSION";
-    private static final String WS_SESSION_PROPERTY = "com.web.http,WS_SESSION";
-    private static long sessionIdSequence = 1L;
-    private static final Object sessionIdSequenceLock = new Object();
-    private static final Map<Long, ChatSession> chatSessions = new Hashtable<>();
-    private static final Map<Session, ChatSession> sessions = new Hashtable<>();
-    private static final Map<Session, HttpSession> httpSessions =
-            new Hashtable<>();
-    public static final List<ChatSession> pendingSessions = new ArrayList<>();
+    /**
+     * 存储浏览器回应ping的pong消息
+     **/
+    private static final byte[] pongData =
+            "This is PONG country.".getBytes(StandardCharsets.UTF_8);
+
+    /**
+     * 该方法引用将注册和取消注册@PostContruct中注册的回调方法
+     **/
+    private final Consumer<HttpSession> callback = this::httpSessionRemoved;
+
+    private boolean closed = false;
+    private HttpSession httpSession;
+    private Session wsSession;
+    private Session otherSession;
+    private ChatSession chatSession;
+    private Principal principal;
+    private ScheduledFuture<?> pingFuture;
+
+    @Inject
+    TaskScheduler taskScheduler;
+    @Inject
+    ChatService chatService;
+    @Inject
+    SessionRegistry sessionRegistry;
 
     /**
      *   当新的握手完成时，该方法将被调用，首先检查HttpSession是否被关联到了Session
@@ -60,61 +80,43 @@ public class ChatEndpoint implements HttpSessionListener {
     @OnOpen
     public void onOpen(Session session, @PathParam("sessionId") long sessionId){
         log.entry(sessionId);
-        HttpSession httpSession = (HttpSession) session.getUserProperties()
-                .get(ChatEndpoint.HTTP_SESSION_PROPERTY);
-        try {
-            if(httpSession == null || httpSession.getAttribute("username") == null){
-                log.warn("Attempt to access chat server while logged out.");
-                session.close(new CloseReason(
-                        CloseReason.CloseCodes.VIOLATED_POLICY,
-                        "You are not logged in!"
-                        ));
-                return;
+
+        this.httpSession = EndpointConfigurator.getExposeSession(session);
+        this.principal = EndpointConfigurator.getExposePrincipal(session);
+
+        try{
+            if(principal == null){
+                log.warn("Unauthorized attempt to access chat server.");
+                session.close(new CloseReason
+                        (CloseReason.CloseCodes.VIOLATED_POLICY, "User not logged in."));
             }
-
-            String username = (String)httpSession.getAttribute("username");
-            session.getUserProperties().put("username", username);
-            ChatMessage message = new ChatMessage();
-            message.setTimeStamp(OffsetDateTime.now());
-            message.setUser(username);
-            ChatSession chatSession;
-
             if(sessionId < 1){
-                log.debug("User starting chat {} is {}.", sessionId, username);
-                message.setType(ChatMessage.Type.STARTED);
-                message.setContent(username + "started the chat session.");
-                chatSession = new ChatSession();
-                synchronized (ChatEndpoint.sessionIdSequenceLock){
-                    chatSession.setSessionId(ChatEndpoint.sessionIdSequence++);
+                CreateResult result = this.chatService.createSession(this.principal.getName());
+                this.chatSession =  result.getChatSession();
+                this.chatSession.setCustomer(session);
+                this.chatSession.setOnRepresentativeJoin(
+                        s -> this.wsSession = s
+                );
+                session.getBasicRemote().sendObject(result.getChatMessage());
+            }else {
+                JoinResult result = this.chatService.joinSession(sessionId, this.principal.getName());
+                if(result == null){
+                    log.warn("Attempt to join a non-existing chat session {}", sessionId);
+                    session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION,
+                            "The chat session do not exist!"));
+                    return;
                 }
-                chatSession.setCustomer(session);
-                chatSession.setCustomerUsername(username);
-                chatSession.setCreationMessage(message);
-                ChatEndpoint.pendingSessions.add(chatSession);
-                ChatEndpoint.chatSessions.put(chatSession.getSessionId(),
-                        chatSession);
-            }else{
-                log.debug("User joining chat {} is {}.", sessionId, username);
-                message.setType(ChatMessage.Type.JOINED);
-                message.setContent(username + "joined the chat session.");
-                chatSession = ChatEndpoint.chatSessions.get(sessionId);
-                chatSession.setRepresentative(session);
-                chatSession.setRepresentativeUsername(username);
-                ChatEndpoint.pendingSessions.remove(chatSession);
-                session.getBasicRemote()
-                        .sendObject(chatSession.getCreationMessage());
-                session.getBasicRemote().sendObject(message);
+                this.chatSession = result.getChatSession();
+                this.chatSession.setOnRepresentativeJoin(session);
+                this.otherSession = this.chatSession.getCustomer();
+                session.getBasicRemote().sendObject(chatSession.getCreationMessage());
+                session.getBasicRemote().sendObject(result.getChatMessage());
+                otherSession.getBasicRemote().sendObject(result.getChatMessage());
             }
-
-            ChatEndpoint.sessions.put(session, chatSession);
-            ChatEndpoint.httpSessions.put(session, httpSession);
-            this.getSessionsFor(httpSession).add(session);
-            chatSession.log(message);
-            chatSession.getCustomer().getBasicRemote().sendObject(message);
-            log.debug("onMessage completed successfully for chat {}.", sessionId);
-
-        } catch (IOException | EncodeException e) {
-            e.printStackTrace();
+            this.wsSession = session;
+            log.debug("OnMessage completed successfully for chat {}.", sessionId);
+        } catch (EncodeException | IOException e) {
+            this.onError(e);
         }finally {
             log.exit();
         }
@@ -125,19 +127,21 @@ public class ChatEndpoint implements HttpSessionListener {
      **/
     @OnMessage
     public void onMessage(Session session, ChatMessage message){
+
+        if(this.closed){
+            log.warn("Chat Message received after connection closed.");
+            return;
+        }
+
         log.entry();
-        ChatSession c = ChatEndpoint.sessions.get(session);
-        Session other = this.getOtherSession(c, session);
-        if(c != null && other != null){
-            c.log(message);
-            try {
-                session.getBasicRemote().sendObject(message);
-                other.getBasicRemote().sendObject(message);
-            } catch (EncodeException | IOException e) {
-                e.printStackTrace();
-            }
-        }else
-            log.warn("Chat message received with only one chat member.");
+        message.setUser(this.principal.getName());
+        this.chatService.logMessage(chatSession, message);
+        try{
+            this.wsSession.getBasicRemote().sendObject(message);
+            this.otherSession.getBasicRemote().sendObject(message);
+        } catch (EncodeException | IOException e) {
+            this.onError(e);
+        }
         log.exit();
     }
 
@@ -147,49 +151,98 @@ public class ChatEndpoint implements HttpSessionListener {
      **/
     @OnClose
     public void onClose(Session session, CloseReason reason){
-        if(reason.getCloseCode() == CloseReason.CloseCodes.NORMAL_CLOSURE){
-            ChatMessage message = new ChatMessage();
-            message.setUser((String)session.getUserProperties().get("username"));
-            message.setType(ChatMessage.Type.LEFT);
-            message.setTimeStamp(OffsetDateTime.now());
-            message.setContent(message.getUser() + "left the chat.");
-            try {
-                Session other = this.close(session, message);
-                if(other != null)
-                    other.close();
-            } catch (IOException e) {
-                log.warn("Problem closing companion chat session.", e);
-            }
-        }else
-            log.warn("Abnormal closure {} for reason [{}].", reason.getCloseCode(),
-                    reason.getReasonPhrase());
+        if(reason.getCloseCode() != CloseReason.CloseCodes.NORMAL_CLOSURE)
+            log.warn("Abnormal closure {} for reason {}",
+                    reason.getCloseCode(), reason.getReasonPhrase());
+
+        synchronized (this){
+            if(this.closed)
+                return;
+            this.close(ChatService.ReasonForLeaving.Normal, null);
+        }
+
     }
 
     @OnError
-    public void onError(Session session, Throwable e) {
+    public void onError(Throwable e) {
         log.warn("Error received in WebSocket session.", e);
-        ChatMessage message = new ChatMessage();
-        message.setUser((String)session.getUserProperties().get("username"));
-        message.setType((ChatMessage.Type.ERROR));
-        message.setTimeStamp(OffsetDateTime.now());
-        message.setContent(message.getUser() + "left the chat due to an error.");
-        try{
-            Session other = this.close(session, message);
-            if(other != null)
-                other.close(new CloseReason(
-                        CloseReason.CloseCodes.UNEXPECTED_CONDITION, e.toString()
-                ));
-        } catch (IOException ignore) { }
-        finally {
-            try {
-                session.close(new CloseReason(
-                        CloseReason.CloseCodes.UNEXPECTED_CONDITION, e.toString()
-                ));
-            } catch (IOException ignore) { }
-            log.exit();
+
+        synchronized (this){
+            if(closed)
+                return;
+            this.close(ChatService.ReasonForLeaving.ERROR, e.toString());
         }
     }
 
+    /**
+     * 向浏览器发送ping消息
+     *
+     *    计划方法——每隔25s发送一个ping消息，
+     * 浏览器将使用pong回应ping消息，当连接关闭时，
+     * 它将取消sendPing的执行。
+     *    由于ChatEndpoint不是单例bean，所以
+     * 使用@scheduled是无效的，为了解决这个问题，
+     * 需要直接使用spring的taskScheduler bean。
+     *
+     * @date 2018/9/17 9:54
+     * @param
+     * @return void
+     **/
+    private void sendPing(){
+        if(!this.wsSession.isOpen())
+            return;
+        log.debug("Sending ping Websocket client.");
+        try {
+            this.wsSession.getBasicRemote()
+                    .sendPing(ByteBuffer.wrap(ChatEndpoint.pongData));
+        } catch (IOException e) {
+            log.warn("Failed to send ping message to Websocket client.", e);
+        }
+    }
+
+    /**
+     * 接收Pong消息
+     *
+     * @date 2018/9/17 19:46
+     * @param message 接收的pong消息
+     * @return void
+     **/
+    @OnMessage
+    public void onPong(PongMessage message){
+        ByteBuffer data = message.getApplicationData();
+        if (!Arrays.equals(ChatEndpoint.pongData, data.array())) {
+            log.warn("Receive pong message with incorrect payload.");
+        } else {
+            log.info("Receive good pong message");
+        }
+    }
+
+    @PostConstruct
+    public void initialize(){
+
+        /**
+         * 注册一个回调方法
+         **/
+        this.sessionRegistry.registerOnRemoveCallback(this.callback);
+        
+        /**
+         * 每隔25s发一个ping消息
+         **/
+        this.pingFuture = this.taskScheduler.scheduleWithFixedDelay(
+                this::sendPing, new Date(System.currentTimeMillis() + 25_000L), 25_000L
+        );
+    }
+
+    private void httpSessionRemoved(HttpSession httpSession){
+        if(httpSession == this.httpSession){
+            synchronized (this){
+                if(this.closed)
+                    return;
+                log.info("Chat Session ended abruptly by {} logging out.", this.principal.getName());
+                this.close(ChatService.ReasonForLeaving.LOGGED_OUT, null);
+            }
+        }
+    }
 
     @Override
     public void sessionCreated(HttpSessionEvent se) {
@@ -233,6 +286,7 @@ public class ChatEndpoint implements HttpSessionListener {
 
     @SuppressWarnings("unchecked")
     private synchronized ArrayList<Session> getSessionsFor(HttpSession session){
+
         log.entry();
         try {
             if(session.getAttribute(WS_SESSION_PROPERTY) == null)
@@ -246,41 +300,38 @@ public class ChatEndpoint implements HttpSessionListener {
     }
 
     private Session getOtherSession(ChatSession c, Session s){
+
         log.entry();
         return log.exit(c == null ? null :
                 (s == c.getCustomer() ? c.getRepresentative() : c.getCustomer()));
     }
 
-    private Session close(Session s, ChatMessage message){
-        log.entry(s);
-        ChatSession c = ChatEndpoint.sessions.get(s);
-        Session other = this.getOtherSession(c, s);
-        ChatEndpoint.sessions.remove(s);
-        HttpSession h = ChatEndpoint.httpSessions.get(s);
-        if(h != null)
-            this.getSessionsFor(h).remove(s);
-        if(c != null){
-            c.log(message);
-            ChatEndpoint.pendingSessions.remove(c);
-            ChatEndpoint.chatSessions.remove(c.getSessionId());
-            try {
-                c.writenChatLog(new File("chat." + c.getSessionId() + ".log"));
-            } catch (IOException e) {
-                log.error("Could not write chat log due to error");
+    private void close(ChatService.ReasonForLeaving reason, String unexpected){
+
+        this.closed = true;
+
+        if(this.pingFuture.isCancelled()) {
+            pingFuture.cancel(true);
+        }
+        this.sessionRegistry.deregisterOnRemoveCallback(this.callback);
+        ChatMessage message = chatService.leaveSession(chatSession, principal.getName(), reason);
+
+        if(message != null){
+            CloseReason closeReason = reason == ChatService.ReasonForLeaving.ERROR ?
+                    new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, unexpected) :
+                    new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Chat Ended");
+
+            synchronized (this.wsSession){
+                if(this.wsSession.isOpen()){
+                    try {
+                        wsSession.getBasicRemote().sendObject(message);
+                        wsSession.close();
+                    } catch (IOException | EncodeException e) {
+                        log.E;
+                    }
+                }
             }
         }
-        if(other != null){
-            ChatEndpoint.sessions.remove(other);
-            h = ChatEndpoint.httpSessions.get(other);
-            if(h != null)
-                this.getSessionsFor(h).remove(s);
-            try {
-                other.getBasicRemote().sendObject(message);
-            } catch (EncodeException | IOException e) {
-                log.warn("Problem closing companion chat session.", e);
-            }
-        }
-        return log.exit(other);
     }
 
     /**
@@ -290,7 +341,11 @@ public class ChatEndpoint implements HttpSessionListener {
      * @date 2018/9/2 16:35
      **/
     public static class EndpointConfigurator
-            extends ServerEndpointConfig.Configurator {
+            extends SpringConfigurator {
+
+
+        private static final String HTTP_SESSION_PROPERTY = "com.web.ws.HTTP_SESSION";
+        private static final String PRINCIPAL_KEY = "com.web.ws.user.principal";
 
         /**
          *   在握手时，该方法将被调用并暴露出底层的HTTP请求，
@@ -301,11 +356,21 @@ public class ChatEndpoint implements HttpSessionListener {
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
             log.entry();
             super.modifyHandshake(config, request, response);
-                config.getUserProperties().put(
-                        ChatEndpoint.HTTP_SESSION_PROPERTY, request.getHttpSession()
-                );
-                log.exit();
+            HttpSession httpSession = (HttpSession) request.getHttpSession();
+            config.getUserProperties().put(
+                    HTTP_SESSION_PROPERTY, request.getHttpSession()
+            );
+            config.getUserProperties().put(PRINCIPAL_KEY, UserPrincipal.g)
+            log.exit();
 
+        }
+
+        public static HttpSession getExposeSession(Session session){
+            return (HttpSession) session.getUserProperties().get(HTTP_SESSION_PROPERTY);
+        }
+
+        public static Principal getExposePrincipal(Session session){
+            return (Principal) session.getUserProperties().get(PRINCIPAL_KEY);
         }
     }
 }

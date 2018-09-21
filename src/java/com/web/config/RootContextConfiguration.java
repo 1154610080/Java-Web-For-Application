@@ -21,6 +21,10 @@ import org.springframework.stereotype.Controller;
 import java.util.concurrent.Executor;
 
 @Configuration
+/**
+ * 使用CGLIB库而不使用java接口代理创建含有异步或计划方法的代理类
+ * 如果proxyTargetClass特性为假，那只有接口指定的方法可以通过计划或异步方式执行
+ **/
 @EnableAsync(proxyTargetClass = true)
 @EnableScheduling
 @ComponentScan(
@@ -73,7 +77,7 @@ public class RootContextConfiguration implements AsyncConfigurer, SchedulingConf
 
 
     /**
-     * 返回正确的异步执行器
+     * 告诉spring为异步方法使用相同的调度器
      **/
     @Override
     public Executor getAsyncExecutor() {
@@ -83,7 +87,7 @@ public class RootContextConfiguration implements AsyncConfigurer, SchedulingConf
     }
 
     /**
-     * 将正确的执行器赋给调度器
+     * 告诉spring为计划方法使用相同的调度器
      **/
     @Override
     public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {

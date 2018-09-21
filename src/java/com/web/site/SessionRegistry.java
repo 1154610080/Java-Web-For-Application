@@ -15,4 +15,8 @@ public interface SessionRegistry {
     int getNumberOfSessions();
 
     List<HttpSession> getAllSessions();
+
+    void registerOnRemoveCallback(Consumer<HttpSession> callback);
+
+    void deregisterOnRemoveCallback(Consumer<HttpSession> callback);
 }

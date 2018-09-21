@@ -3,10 +3,8 @@ package com.web.site;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Session注册实现类
@@ -18,6 +16,9 @@ import java.util.Map;
 public class DefaultSessionRegistry implements SessionRegistry{
 
     private final Map<String, HttpSession> sessions = new Hashtable<>();
+    private final Set<Consumer<HttpSession>> callbacks = new HashSet<>();
+    private final Set<Consumer<HttpSession>> callbacksAddedWhileLocked =
+            new HashSet<>();
 
     @Override
     public void addSession(HttpSession session) {
@@ -34,7 +35,15 @@ public class DefaultSessionRegistry implements SessionRegistry{
 
     @Override
     public void removeSession(HttpSession session) {
+
         this.sessions.remove(session.getId());
+        synchronized (this.callbacks){
+            callbacksAddedWhileLocked.clear();
+            callbacks.forEach(c -> c.accept(session));
+            try {
+                this.callbacksAddedWhileLocked.forEach(c->c.accept(session));
+            }catch (ConcurrentModificationException ignore){}
+        }
     }
 
     @Override
@@ -45,5 +54,20 @@ public class DefaultSessionRegistry implements SessionRegistry{
     @Override
     public List<HttpSession> getAllSessions() {
         return new ArrayList<>(sessions.values());
+    }
+
+    @Override
+    public void registerOnRemoveCallback(Consumer<HttpSession> callback) {
+        this.callbacksAddedWhileLocked.add(callback);
+        synchronized (this.callbacks){
+            callbacks.add(callback);
+        }
+    }
+
+    @Override
+    public void deregisterOnRemoveCallback(Consumer<HttpSession> callback) {
+        synchronized (this.callbacks){
+            this.callbacks.remove(callback);
+        }
     }
 }

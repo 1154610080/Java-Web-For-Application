@@ -41,7 +41,7 @@ public class TicketController {
     @RequestMapping(value = {"", "list"}, method = RequestMethod.GET)
     public String list(Map<String, Object> model){
         log.debug("Listing tickets.");
-        model.put("ticketDatabase", ticketService.getAllTickets());
+        model.put("tickets", ticketService.getAllTickets());
         return "ticket/list";
     }
 

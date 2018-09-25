@@ -12,7 +12,7 @@ import java.time.Instant;
  * @date 2018/9/2 15:45
  **/
 public class ChatMessage implements Cloneable {
-    private Instant timeStamp;
+    private Instant timestamp;
     private Type type;
     private String user;
     private String contentCode;
@@ -20,12 +20,12 @@ public class ChatMessage implements Cloneable {
     private String localizedContent;
     private String userContent;
 
-    public Instant getTimeStamp() {
-        return timeStamp;
+    public Instant getTimestamp() {
+        return timestamp;
     }
 
-    public void setTimeStamp(Instant timeStamp) {
-        this.timeStamp = timeStamp;
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
     }
 
     public Type getType() {
@@ -56,7 +56,7 @@ public class ChatMessage implements Cloneable {
         return contentArguments;
     }
 
-    public void setContentArguments(Object[] contentArguments) {
+    public void setContentArguments(Object ... contentArguments) {
         this.contentArguments = contentArguments;
     }
 

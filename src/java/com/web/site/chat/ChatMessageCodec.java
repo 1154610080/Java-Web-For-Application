@@ -34,6 +34,11 @@ public class ChatMessageCodec
     static {
         MAPPER.findAndRegisterModules();
         MAPPER.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+        /**
+         * 添加Mix-in类
+         **/
+        MAPPER.addMixInAnnotations(ChatMessage.class,
+                ChatMessage.MixInForWebSocket.class);
     }
 
     @Override

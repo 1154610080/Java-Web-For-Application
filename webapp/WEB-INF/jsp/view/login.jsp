@@ -1,5 +1,3 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%--@elvariable id="loginFailed" type="java.lang.Boolean"--%>
 <%--@elvariable id="loginForm" type="com.web.site.AuthenticationFiler.Form"--%>
 <template:loggedOut htmlTitle="Log In" bodyTitle="Log In">

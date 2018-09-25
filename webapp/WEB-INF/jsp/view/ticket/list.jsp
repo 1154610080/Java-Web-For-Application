@@ -1,17 +1,17 @@
-<%--@elvariable id="ticketDatabase" type="java.util.Map<Integer, com.web.site.Ticket>"--%>
+<%--@elvariable id="tickets" type="java.util.List<com.web.site.Ticket>"--%>
 <template:basic htmlTitle="Tickets" bodyTitle="Tickets">
     <c:choose>
-        <c:when test="${fn:length(ticketDatabase) == 0}">
-            <i>There are no ticket in the system.</i>
+        <c:when test="${fn:length(tickets) == 0}">
+            <i>There are no tickets in the system.</i>
         </c:when>
         <c:otherwise>
-            <c:forEach items="${ticketDatabase}" var="entry">
-                Ticket ${entry.key}:
-                <a href="<c:url value="/ticket/view/${entry.key}" />">
-                    <c:out value="${wrox:abbreviateString(entry.value.subject, 60)}"/>
+            <c:forEach items="${tickets}" var="ticket">
+                Ticket ${ticket.id}:
+                <a href="<c:url value="/ticket/view/${ticket.id}" />">
+                    <c:out value="${wrox:abbreviateString(ticket.subject, 60)}"/>
                 </a><br />
-                <c:out value="${entry.value.customerName}" /> created ticket
-                <wrox:formatDate value="${entry.value.dateCreated}" type="both"
+                <c:out value="${ticket.customerName}" /> created ticket
+                <wrox:formatDate value="${ticket.dateCreated}" type="both"
                                  timeStyle="short" dateStyle="medium" /><br />
                 <br />
             </c:forEach>

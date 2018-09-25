@@ -1,4 +1,4 @@
-<%@ page import="com.web.site.Ticket" %><%--@elvariable id="ticketId" type="java.lang.String"--%>
+<%--@elvariable id="ticketId" type="java.lang.String"--%>
 <%--@elvariable id="ticket" type="com.web.site.Ticket"--%>
 <template:basic htmlTitle="${ticket.subject}"
                 bodyTitle="Ticket #${ticketId}: ${ticket.subject}">

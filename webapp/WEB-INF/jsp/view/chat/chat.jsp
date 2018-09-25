@@ -35,36 +35,36 @@
                 var modalErrorBody = $("#modalErrorBody");
                 var chatLog = $('#chatLog');
                 var messageArea = $('#messageArea');
-                var username = '${sessionScope.username}';
+                var username = '${pageContext.request.userPrincipal.name}';
                 var otherJoined = false;
 
                 if(!("WebSocket" in window)) {
                     modalErrorBody.text('WebSockets are not supported in this ' +
-                            'browser. Try Internet Explorer 10 or the latest ' +
-                            'versions of Mozilla Firefox or Google Chrome.');
+                        'browser. Try Internet Explorer 10 or the latest ' +
+                        'versions of Mozilla Firefox or Google Chrome.');
                     modalError.modal('show');
                     return;
                 }
 
                 var infoMessage = function(m) {
                     chatLog.append($('<div>').addClass('informational')
-                            .text(moment().format('h:mm:ss a') + ': ' + m));
+                        .text(moment().format('h:mm:ss a') + ': ' + m));
                 };
                 infoMessage('Connecting to the chat server...');
 
                 var objectMessage = function(message) {
                     var log = $('<div>');
                     var date = message.timestamp == null ? '' :
-                            moment.unix(message.timestamp).format('h:mm:ss a');
+                        moment.unix(message.timestamp).format('h:mm:ss a');
                     if(message.user != null) {
                         var c = message.user == username ? 'user-me' : 'user-you';
                         log.append($('<span>').addClass(c)
-                                        .text(date+' '+message.user+':\xA0'))
-                                .append($('<span>').text(message.content));
+                            .text(date+' '+message.user+':\xA0'))
+                            .append($('<span>').text(message.content));
                     } else {
                         log.addClass(message.type == 'ERROR' ? 'error' :
-                                'informational')
-                                .text(date + ' ' + message.content);
+                            'informational')
+                            .text(date + ' ' + message.content);
                     }
                     chatLog.append(log);
                 };
@@ -72,7 +72,7 @@
                 var server;
                 try {
                     server = new WebSocket('ws://' + window.location.host +
-                            '<c:url value="/chat/${chatSessionId}" />');
+                        '<c:url value="/chat/${chatSessionId}" />');
                     server.binaryType = 'arraybuffer';
                 } catch(error) {
                     modalErrorBody.text(error);
@@ -90,7 +90,7 @@
                     server = null;
                     if(!event.wasClean || event.code != 1000) {
                         modalErrorBody.text('Code ' + event.code + ': ' +
-                                event.reason);
+                            event.reason);
                         modalError.modal('show');
                     }
                 };
@@ -103,18 +103,18 @@
                 server.onmessage = function(event) {
                     if(event.data instanceof ArrayBuffer) {
                         var message = JSON.parse(String.fromCharCode.apply(
-                                null, new Uint8Array(event.data)
+                            null, new Uint8Array(event.data)
                         ));
                         objectMessage(message);
                         if(message.type == 'JOINED') {
                             otherJoined = true;
                             if(username != message.user)
                                 infoMessage('You are now chatting with ' +
-                                        message.user + '.');
+                                    message.user + '.');
                         }
                     } else {
                         modalErrorBody.text('Unexpected data type [' +
-                                typeof(event.data) + '].');
+                            typeof(event.data) + '].');
                         modalError.modal('show');
                     }
                 };
@@ -125,7 +125,7 @@
                         modalError.modal('show');
                     } else if(!otherJoined) {
                         modalErrorBody.text(
-                                'The other user has not joined the chat yet.');
+                            'The other user has not joined the chat yet.');
                         modalError.modal('show');
                     } else if(messageArea.get(0).value.trim().length > 0) {
                         var message = {

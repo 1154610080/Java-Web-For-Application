@@ -4,6 +4,8 @@ import com.web.site.SessionRegistry;
 import com.web.site.UserPrincipal;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.server.standard.SpringConfigurator;
 
@@ -59,6 +61,8 @@ public class ChatEndpoint{
     private ChatSession chatSession;
     private Principal principal;
     private ScheduledFuture<?> pingFuture;
+    private Locale locale;
+    private Locale otherLocal;
 
     @Inject
     TaskScheduler taskScheduler;
@@ -66,6 +70,8 @@ public class ChatEndpoint{
     ChatService chatService;
     @Inject
     SessionRegistry sessionRegistry;
+    @Inject
+    MessageSource messageSource;
 
     /**
      *   当新的握手完成时，该方法将被调用，首先检查HttpSession是否被关联到了Session
@@ -79,6 +85,7 @@ public class ChatEndpoint{
 
         this.httpSession = EndpointConfigurator.getExposeSession(session);
         this.principal = EndpointConfigurator.getExposePrincipal(session);
+        this.locale = EndpointConfigurator.getExposedLocale(session);
 
         try{
             if(principal == null){
@@ -93,7 +100,7 @@ public class ChatEndpoint{
                 this.chatSession.setOnRepresentativeJoin(
                         s -> this.wsSession = s
                 );
-                session.getBasicRemote().sendObject(result.getChatMessage());
+                session.getBasicRemote().sendObject(this.cloneAndLocalize(result.getChatMessage(), this.locale));
             }else {
                 JoinResult result = this.chatService.joinSession(sessionId, this.principal.getName());
                 if(result == null){
@@ -105,9 +112,13 @@ public class ChatEndpoint{
                 this.chatSession = result.getChatSession();
                 this.chatSession.setOnRepresentativeJoin(session);
                 this.otherSession = this.chatSession.getCustomer();
-                session.getBasicRemote().sendObject(chatSession.getCreationMessage());
+                this.otherLocal = EndpointConfigurator.getExposedLocale(this.otherSession);
+
+                session.getBasicRemote().sendObject(this.cloneAndLocalize(
+                        chatSession.getCreationMessage(), locale));
                 session.getBasicRemote().sendObject(result.getChatMessage());
-                otherSession.getBasicRemote().sendObject(result.getChatMessage());
+                otherSession.getBasicRemote().sendObject(this.cloneAndLocalize(
+                        result.getChatMessage(), otherLocal));
             }
             this.wsSession = session;
             log.debug("OnMessage completed successfully for chat {}.", sessionId);
@@ -133,8 +144,8 @@ public class ChatEndpoint{
         message.setUser(this.principal.getName());
         this.chatService.logMessage(chatSession, message);
         try{
-            this.wsSession.getBasicRemote().sendObject(message);
-            this.otherSession.getBasicRemote().sendObject(message);
+            this.wsSession.getBasicRemote().sendObject(cloneAndLocalize(message, locale));
+            this.otherSession.getBasicRemote().sendObject(cloneAndLocalize(message, otherLocal));
         } catch (EncodeException | IOException e) {
             this.onError(e);
         }
@@ -259,7 +270,8 @@ public class ChatEndpoint{
             synchronized (this.wsSession){
                 if(this.wsSession.isOpen()){
                     try {
-                        wsSession.getBasicRemote().sendObject(message);
+                        wsSession.getBasicRemote().sendObject(cloneAndLocalize(
+                                message, locale));
                         wsSession.close();
                     } catch (IOException | EncodeException e) {
                         log.error("Error closing chat connection.");
@@ -271,7 +283,8 @@ public class ChatEndpoint{
                 synchronized (this.otherSession){
                     if(this.otherSession.isOpen()){
                         try {
-                            this.otherSession.getBasicRemote().sendObject(message);
+                            this.otherSession.getBasicRemote().sendObject(this.cloneAndLocalize(
+                                    message, otherLocal));
                             this.otherSession.close();
                         } catch (EncodeException | IOException e) {
                             log.error("Error closing chat connection.");
@@ -280,6 +293,14 @@ public class ChatEndpoint{
                 }
             }
         }
+    }
+
+    private ChatMessage cloneAndLocalize(ChatMessage message, Locale locale){
+        message = message.clone();
+        message.setLocalizedContent(this.messageSource.getMessage(
+                message.getContentCode(), message.getContentArguments(), locale
+        ));
+        return message;
     }
 
     /**
@@ -294,11 +315,13 @@ public class ChatEndpoint{
 
         private static final String HTTP_SESSION_PROPERTY = "com.web.ws.HTTP_SESSION";
         private static final String PRINCIPAL_KEY = "com.web.ws.user.principal";
+        private static final String LOCAL_KEY = "com.web.ws.user.locale";
 
         /**
          *   在握手时，该方法将被调用并暴露出底层的HTTP请求，
          * 从该请求中可以获得HttpSession对象，此时可通过HTTP会话保证用户已登录，
          * 如果用户登录了，还可以关闭webSocket会话。
+         * 对消息进行本地化。
          **/
         @Override
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response) {
@@ -309,6 +332,7 @@ public class ChatEndpoint{
                     HTTP_SESSION_PROPERTY, request.getHttpSession()
             );
             config.getUserProperties().put(PRINCIPAL_KEY, UserPrincipal.getPrincipal(httpSession));
+            config.getUserProperties().put(LOCAL_KEY, LocaleContextHolder.getLocale());
             log.exit();
 
         }
@@ -319,6 +343,10 @@ public class ChatEndpoint{
 
         public static Principal getExposePrincipal(Session session){
             return (Principal) session.getUserProperties().get(PRINCIPAL_KEY);
+        }
+
+        public static Locale getExposedLocale(Session session){
+            return (Locale) session.getUserProperties().get(LOCAL_KEY);
         }
     }
 }

@@ -76,6 +76,16 @@ public class ChatMessage implements Cloneable {
         this.userContent = userContent;
     }
 
+    @Override
+    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportException")
+    protected ChatMessage clone(){
+        try {
+            return (ChatMessage) super.clone();
+        }catch (CloneNotSupportedException e){
+            throw new RuntimeException("impossible clone not supported", e);
+        }
+    }
+
     public static enum Type{
         STARTED, JOINED, ERROR, LEFT, TEXT
     }

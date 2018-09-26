@@ -11,14 +11,13 @@
         <jsp:invoke fragment="extraHeadContent" />
     </jsp:attribute>
     <jsp:attribute name="navigationContent">
-        <a href="<c:url value="/ticket/list" />">List Tickets</a><br />
-        <a href="<c:url value="/ticket/create" />">Create a Ticket</a><br />
+        <a href="<c:url value="/ticket/list" />"><spring:message code="nav.item.list.tickets" /></a><br />
+        <a href="<c:url value="/ticket/create" />"><spring:message code="nav.item.create.ticket" /></a><br />
         <a href="javascript:void 0;"
-           onclick="newChat();">Chat with Support</a><br />
-        <a href="<c:url value="/chat/list" />">View Chat Requests</a><br />
-        <a href="<c:url value="/session/list" />">List Sessions</a><br />
-        <a href="<c:url value="/logout" />">Log Out</a><br />
-        <jsp:invoke fragment="extraNavigationContent" />
+           onclick="newChat();"><spring:message code="nav.item.chat.support" /></a><br />
+        <a href="<c:url value="/chat/list" />"><spring:message code="nav.item.view.chat" /></a><br />
+        <a href="<c:url value="/session/list" />"><spring:message code="nav.item.list.session" /></a><br />
+        <a href="<c:url value="/logout" />"><spring:message code="nav.item.logout" /></a><br />
     </jsp:attribute>
     <jsp:body>
         <jsp:doBody />

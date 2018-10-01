@@ -1,5 +1,9 @@
 package com.web.site;
 
+import com.web.validation.NotBlank;
+
+import javax.validation.constraints.Size;
+
 /**
  * 附件POJO
  *
@@ -8,8 +12,13 @@ package com.web.site;
  **/
 public class Attachment {
 
+    @NotBlank(message = "validate.attachment.name")
     private String name;
+
+    @NotBlank(message = "validate.attachment.mimeContentType")
     private String mimeContentType;
+
+    @Size(min = 1, message = "validate.attachment.content")
     private byte[] content;
 
     public String getName() {

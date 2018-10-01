@@ -1,5 +1,6 @@
 package com.web.site;
 
+import javax.validation.Valid;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -23,6 +24,7 @@ public class Ticket {
 
     Instant dateCreated;
 
+    @Valid
     Map<String, Attachment> attachments = new LinkedHashMap<>();
 
     public long getId() {

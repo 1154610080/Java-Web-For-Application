@@ -108,7 +108,7 @@ public class RootContextConfiguration implements AsyncConfigurer, SchedulingConf
         messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
         messageSource.setBasenames(
                 "/WEB-INF/i18n/titles", "/WEB-INF/i18n/messages",
-                "/WEB-INF/i18n/errors"
+                "/WEB-INF/i18n/errors", "/WEB-INF/i18n/validation"
         );
         return messageSource;
     }

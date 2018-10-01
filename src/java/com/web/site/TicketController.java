@@ -3,6 +3,7 @@ package com.web.site;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -12,6 +13,8 @@ import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.inject.Inject;
+import javax.validation.Valid;
+import javax.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
@@ -107,12 +110,18 @@ public class TicketController {
      * 创建票据
      *
      * @date 2018/9/8 19:58
-     * @param session 会话
+     * @param principal 当事人
 	 * @param form   提交表单
+     * @param errors 错误集，用于向用户报告错误
+     * @param model 通用模型
      * @return org.springframework.web.servlet.View
      **/
     @RequestMapping(value = "create", method = RequestMethod.POST)
-    public View create(Principal principal, Form form) throws IOException {
+    public ModelAndView create(Principal principal, @Valid Form form,
+                       Errors errors, Map<String, Object> model) throws IOException {
+
+        if(errors.hasErrors())
+            return new ModelAndView("ticket/add");
 
         Ticket ticket = new Ticket();
         ticket.setCustomerName(principal.getName());
@@ -131,9 +140,16 @@ public class TicketController {
                 ticket.addAttachment(attachment);
         }
 
-        ticketService.save(ticket);
+        try {
 
-        return new RedirectView("/ticket/view/" + ticket.getId(), true, false);
+            ticketService.save(ticket);
+        }catch (ConstraintViolationException e){
+            model.put("validationErrors", e.getConstraintViolations());
+            return new ModelAndView("ticket/add");
+        }
+
+        return new ModelAndView(new RedirectView(
+                "/ticket/view/" + ticket.getId(), true, false));
 
     }
 

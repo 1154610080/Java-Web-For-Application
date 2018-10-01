@@ -1,8 +1,10 @@
 package com.web.site;
 
+import com.web.validation.NotBlank;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
@@ -12,6 +14,8 @@ import org.springframework.web.servlet.view.RedirectView;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +69,7 @@ public class AuthenticationController {
         model.put("loginFailed", false);
         model.put("loginForm", new Form());
 
-        return new ModelAndView("login");
+        return new ModelAndView("/login");
     }
 
     /**
@@ -80,14 +84,25 @@ public class AuthenticationController {
      **/
     @RequestMapping(value = "login", method = RequestMethod.POST)
     public ModelAndView login(Map<String, Object>model, HttpSession session,
-                              HttpServletRequest request, Form form){
+                              HttpServletRequest request, @Valid Form form, Errors errors){
 
         if(UserPrincipal.getPrincipal(session) != null)
             return this.getTicketRedirect();
 
-        Principal principal = this.authenticationService.authenticate(
-                form.getUsername(), form.getPassword()
-        );
+        if(errors.hasErrors()){
+            form.setPassword(null);
+            return new ModelAndView("login");
+        }
+
+        Principal principal;
+        try{
+            principal = this.authenticationService.authenticate(
+                    form.getUsername(), form.getPassword()
+            );
+        }catch (ConstraintViolationException e){
+            form.setPassword(null);
+            return new ModelAndView("login");
+        }
 
         if(principal == null){
             form.setPassword(null);
@@ -112,9 +127,11 @@ public class AuthenticationController {
      * @author Egan
      * @date 2018/9/2 12:38
      **/
-    private static class Form
+    public static class Form
     {
+        @NotBlank(message = "{validate.authenticate.username}")
         private String username;
+        @NotBlank(message = "{validate.authenticate.password}")
         private String password;
 
         public String getUsername() {

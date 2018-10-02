@@ -19,6 +19,8 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
@@ -111,5 +113,37 @@ public class RootContextConfiguration implements AsyncConfigurer, SchedulingConf
                 "/WEB-INF/i18n/errors", "/WEB-INF/i18n/validation"
         );
         return messageSource;
+    }
+
+    /**
+     * 使用消息源实现错误代码本地化
+     *
+     * @date 2018/10/2 16:38
+     * @param
+     * @return org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
+     **/
+    @Bean
+    public LocalValidatorFactoryBean localValidatorFactoryBean(){
+        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+        validator.setValidationMessageSource(this.messageSource());
+        return validator;
+    }
+
+    /**
+     * 方法验证Bean后处理器
+     *      它将寻找标注了 @Validated 或 @ValidOnExecution 的类，
+     *  并为它们创建dialing，这样标注在参数上的验证才可以在方法之前执行，
+     *  被标注方法上的返回值验证在方法之后执行。
+     *
+     * @date 2018/10/2 16:43
+     * @param
+     * @return org.springframework.validation.beanvalidation.MethodValidationPostProcessor
+     **/
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor(){
+        MethodValidationPostProcessor processor =
+                new MethodValidationPostProcessor();
+        processor.setValidator(this.localValidatorFactoryBean());
+        return processor;
     }
 }

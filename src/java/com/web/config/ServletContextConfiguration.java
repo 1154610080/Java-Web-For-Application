@@ -15,6 +15,8 @@ import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.oxm.Marshaller;
 import org.springframework.oxm.Unmarshaller;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.Validator;
+import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.RequestToViewNameTranslator;
@@ -45,6 +47,8 @@ public class ServletContextConfiguration extends WebMvcConfigurerAdapter{
     Marshaller marshaller;
     @Inject
     Unmarshaller unmarshaller;
+    @Inject
+    SpringValidatorAdapter validator;
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -109,5 +113,17 @@ public class ServletContextConfiguration extends WebMvcConfigurerAdapter{
     @Bean
     public MultipartResolver multipartResolver(){
         return new StandardServletMultipartResolver();
+    }
+
+    /**
+     * 重写验证器访问方法，使它返回根应用上下文中配置的验证器。
+     *
+     * @date 2018/10/2 16:47
+     * @param
+     * @return org.springframework.validation.Validator
+     **/
+    @Override
+    public Validator getValidator() {
+        return this.validator;
     }
 }

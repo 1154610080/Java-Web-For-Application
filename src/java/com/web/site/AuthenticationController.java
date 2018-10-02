@@ -67,7 +67,7 @@ public class AuthenticationController {
             return this.getTicketRedirect();
 
         model.put("loginFailed", false);
-        model.put("loginForm", new Form());
+        model.put("loginForm", new LoginForm());
 
         return new ModelAndView("/login");
     }
@@ -84,7 +84,7 @@ public class AuthenticationController {
      **/
     @RequestMapping(value = "login", method = RequestMethod.POST)
     public ModelAndView login(Map<String, Object>model, HttpSession session,
-                              HttpServletRequest request, @Valid Form form, Errors errors){
+                              HttpServletRequest request, @Valid LoginForm form, Errors errors){
 
         if(UserPrincipal.getPrincipal(session) != null)
             return this.getTicketRedirect();
@@ -127,7 +127,7 @@ public class AuthenticationController {
      * @author Egan
      * @date 2018/9/2 12:38
      **/
-    public static class Form
+    public static class LoginForm
     {
         @NotBlank(message = "{validate.authenticate.username}")
         private String username;

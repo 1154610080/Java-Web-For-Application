@@ -20,6 +20,8 @@
     <spring.framework.version>4.0.6.RELEASE</spring.framework.version>
     <spring.websocket.version>4.0.2.RELEASE</spring.websocket.version>
     <validation.version>1.1.0.Final</validation.version>
+    <hibernate.version>5.1.0.Final</hibernate.version>
+    <jboss.loggging.version>3.2.0.Beta1</jboss.loggging.version>
   </properties>
 
   <dependencies>
@@ -190,6 +192,26 @@
       <version>${validation.version}</version>
       <scope>compile</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>${hibernate.version}</version>
+      <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jboss.logging</groupId>
+          <artifactId>jboss-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging</artifactId>
+      <version>${jboss.loggging.version}</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -201,8 +223,8 @@
           <artifactId>maven-war-plugin</artifactId>
           <version>2.3</version>
           <configuration>
-            <webappDirectory>webapp</webappDirectory>
-            <warSourceDirectory>webapp</warSourceDirectory>
+            <webappDirectory>/webapp</webappDirectory>
+            <warSourceDirectory>/webapp</warSourceDirectory>
           </configuration>
         </plugin>
         <plugin>

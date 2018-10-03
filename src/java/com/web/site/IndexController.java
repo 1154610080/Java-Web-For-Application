@@ -1,6 +1,6 @@
 package com.web.site;
 
-import org.springframework.stereotype.Controller;
+import com.web.config.annotation.WebController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.view.RedirectView;
@@ -11,7 +11,7 @@ import org.springframework.web.servlet.view.RedirectView;
  * @author Egan
  * @date 2018/9/13 21:43
  **/
-@Controller
+@WebController
 public class IndexController {
 
     @RequestMapping("/")

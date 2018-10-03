@@ -1,8 +1,8 @@
 package com.web.site;
 
+import com.web.config.annotation.WebController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +26,7 @@ import java.util.Map;
  * @author Egan
  * @date 2018/9/8 19:10
  **/
-@Controller
+@WebController
 @RequestMapping("ticket")
 public class TicketController {
 

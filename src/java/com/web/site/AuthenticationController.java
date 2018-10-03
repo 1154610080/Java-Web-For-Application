@@ -1,9 +1,9 @@
 package com.web.site;
 
+import com.web.config.annotation.WebController;
 import com.web.validation.NotBlank;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -26,7 +26,7 @@ import java.util.Map;
  * @author Egan
  * @date 2018/9/2 12:30
  **/
-@Controller
+@WebController
 public class AuthenticationController {
     private static final Logger log = LogManager.getLogger();
     private static final Map<String, String> userdatabase = new HashMap<>();

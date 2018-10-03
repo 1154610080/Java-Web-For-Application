@@ -11,4 +11,5 @@ public interface TicketService {
     Ticket getTicket(@Min(value = 1L, message = "{validate.TicketService.getTicket.id}")
                              long id);
     void save(@NotNull(message = "{validate.TicketService.save.ticket}") @Valid Ticket ticket);
+    void delete(long id);
 }

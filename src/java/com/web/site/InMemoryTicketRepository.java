@@ -41,5 +41,10 @@ public class InMemoryTicketRepository implements TicketRepository {
         ticketDatabase.put(ticket.getId(), ticket);
     }
 
+    @Override
+    public void delete(long id) {
+        this.ticketDatabase.remove(id);
+    }
+
     private synchronized long getNextTicketId(){ return this.TICKET_ID_SEQUENCE++; }
 }

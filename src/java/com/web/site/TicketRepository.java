@@ -8,4 +8,5 @@ public interface TicketRepository {
     Ticket get(long id);
     void add(Ticket ticket);
     void update(Ticket ticket);
+    void delete(long id);
 }

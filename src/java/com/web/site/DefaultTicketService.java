@@ -35,4 +35,9 @@ public class DefaultTicketService implements TicketService {
         }else
             ticketRepository.update(ticket);
     }
+
+    @Override
+    public void delete(long id) {
+        this.ticketRepository.delete(id);
+    }
 }

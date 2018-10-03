@@ -1,5 +1,6 @@
 package com.web.site.chat;
 
+import com.web.config.annotation.WebController;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +16,7 @@ import java.util.Map;
  * @author Egan
  * @date 2018/9/2 18:38
  **/
-@Controller
+@WebController
 @RequestMapping("chat")
 public class ChatController {
 

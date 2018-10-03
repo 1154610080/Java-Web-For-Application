@@ -1,6 +1,6 @@
 package com.web.site;
 
-import org.springframework.stereotype.Controller;
+import com.web.config.annotation.WebController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -14,7 +14,7 @@ import java.util.Map;
  * @author Egan
  * @date 2018/9/13 22:25
  **/
-@Controller
+@WebController
 @RequestMapping("session")
 public class SessionListController {
 

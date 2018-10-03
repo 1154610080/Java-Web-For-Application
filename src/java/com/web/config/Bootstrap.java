@@ -22,17 +22,28 @@ public class Bootstrap implements WebApplicationInitializer{
         container.addListener(new ContextLoaderListener(rootContext));
         container.addListener(SessionListener.class);
 
-        AnnotationConfigWebApplicationContext servletContext =
+        AnnotationConfigWebApplicationContext WebContext =
                 new AnnotationConfigWebApplicationContext();
-        servletContext.register(ServletContextConfiguration.class);
+        WebContext.register(WebServletContextConfiguration.class);
         ServletRegistration.Dynamic dispatcher = container
-                .addServlet("springDispatcher", new DispatcherServlet(servletContext));
+                .addServlet("springDispatcher", new DispatcherServlet(WebContext));
 
         dispatcher.setLoadOnStartup(1);
         dispatcher.setMultipartConfig(new MultipartConfigElement(
                 null, 20_971_520L, 41_943_040L, 512_000
         ));
         dispatcher.addMapping("/");
+
+        AnnotationConfigWebApplicationContext restContext =
+                new AnnotationConfigWebApplicationContext();
+        restContext.register(RestServletContextConfiguration.class);
+        DispatcherServlet servlet = new DispatcherServlet(restContext);
+        servlet.setDispatchOptionsRequest(true);
+        dispatcher = container.addServlet(
+                "springRestDispatcher", servlet
+        );
+        dispatcher.setLoadOnStartup(2);
+        dispatcher.addMapping("/services/Rest/*");
 
         //注册日志过滤器
         FilterRegistration registration = container.addFilter("loggingFilter", new LoggingFilter());

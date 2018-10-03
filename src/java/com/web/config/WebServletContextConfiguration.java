@@ -1,6 +1,7 @@
 package com.web.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.web.config.annotation.WebController;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,6 @@ import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.oxm.Marshaller;
 import org.springframework.oxm.Unmarshaller;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 import org.springframework.web.multipart.MultipartResolver;
@@ -32,14 +32,20 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * 传统Web 应用上下文配置
+ *
+ * @author Egan
+ * @date 2018/10/3 15:10
+ **/
 @Configuration
 @EnableWebMvc
 @ComponentScan(
         basePackages = "com.web.site",
         useDefaultFilters = false,
-        includeFilters = @ComponentScan.Filter(Controller.class)
+        includeFilters = @ComponentScan.Filter(WebController.class)
 )
-public class ServletContextConfiguration extends WebMvcConfigurerAdapter{
+public class WebServletContextConfiguration extends WebMvcConfigurerAdapter{
 
     @Inject
     ObjectMapper objectMapper;

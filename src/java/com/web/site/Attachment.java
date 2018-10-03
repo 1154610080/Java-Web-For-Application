@@ -3,6 +3,7 @@ package com.web.site;
 import com.web.validation.NotBlank;
 
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlSchemaType;
 
 /**
  * 附件POJO
@@ -37,6 +38,7 @@ public class Attachment {
         this.mimeContentType = mimeContentType;
     }
 
+    @XmlSchemaType(name = "base64Binary")
     public byte[] getContent() {
         return content;
     }

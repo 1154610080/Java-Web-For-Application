@@ -21,6 +21,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
@@ -34,7 +35,7 @@ import java.util.concurrent.Executor;
 @EnableScheduling
 @ComponentScan(
         basePackages = "com.web.site",
-        excludeFilters = @ComponentScan.Filter(Controller.class)
+        excludeFilters = @ComponentScan.Filter({Controller.class, ControllerAdvice.class})
 )
 public class RootContextConfiguration implements AsyncConfigurer, SchedulingConfigurer{
 

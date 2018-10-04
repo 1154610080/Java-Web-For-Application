@@ -7,6 +7,7 @@ import org.springframework.web.WebApplicationInitializer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.ws.transport.http.MessageDispatcherServlet;
 
 import javax.servlet.*;
 
@@ -44,6 +45,17 @@ public class Bootstrap implements WebApplicationInitializer{
         );
         dispatcher.setLoadOnStartup(2);
         dispatcher.addMapping("/services/Rest/*");
+
+        AnnotationConfigWebApplicationContext soapContext =
+                new AnnotationConfigWebApplicationContext();
+        soapContext.register(SoapServletContextConfiguration.class);
+        MessageDispatcherServlet soapServlet =
+                new MessageDispatcherServlet(soapContext);
+        soapServlet.setTransformWsdlLocations(true);
+        dispatcher = container.addServlet("springSoapDispatcher", soapServlet);
+        dispatcher.setLoadOnStartup(3);
+        dispatcher.addMapping("/services/Soap/*");
+
 
         //注册日志过滤器
         FilterRegistration registration = container.addFilter("loggingFilter", new LoggingFilter());
